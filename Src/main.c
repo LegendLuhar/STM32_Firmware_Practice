@@ -18,12 +18,6 @@
 
 #include <stdint.h>
 
-/*
-Burns CPU cycles to emulate a timer (busy-wait loop)
-*/
-void delay_ms(uint32_t time) {
-    for (volatile uint32_t i = 0; i < time * 1000; i++);
-}
 
 /*
 Configure SysTick timer
@@ -43,6 +37,19 @@ void systick_init(void) {
     *syst_csr &= ~7U;
     *syst_csr |= 5U;
 }
+
+void wait_one_tick(volatile uint32_t *syst_csr) {
+    while ((*syst_csr & (1U << 16)) == 0);
+}
+
+void delay_ms(uint32_t time) {
+    volatile uint32_t *syst_csr = (volatile uint32_t *)0xE000E010;
+    
+    for (uint32_t i = 0; i < time; i++) {
+        wait_one_tick(syst_csr);
+    }
+}
+
 
 int main(void)
 {
