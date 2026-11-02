@@ -18,8 +18,36 @@
 
 #include <stdint.h>
 
+/*
+Burns CPU cycles to emulate a timer (busy-wait loop)
+*/
+void delay_ms(uint32_t time) {
+    for (volatile uint32_t i = 0; i < time * 1000; i++);
+}
+
+/*
+Configure SysTick timer
+*/
+void systick_init(void) {
+    // Configure reload register for a 1 ms interval
+    volatile uint32_t *syst_rvr = (volatile uint32_t *)0xE000E014;
+    *syst_rvr = 15999;
+
+    // Clear current counter
+    volatile uint32_t *syst_cvr = (volatile uint32_t *)0xE000E018;
+    *syst_cvr = 0;
+
+
+    // Configure and enable SysTick
+    volatile uint32_t *syst_csr = (volatile uint32_t *)0xE000E010;
+    *syst_csr &= ~7U;
+    *syst_csr |= 5U;
+}
+
 int main(void)
 {
+    //SysTick configuration
+    systick_init();
     /*
     Enable GPIOA peripheral for LED
     */
@@ -36,10 +64,15 @@ int main(void)
     *gpio_a_moder |= (1U << shift);
 
     /*
-    Turn on green LED (LD2, PA5) by accessing GPIOA_ODR register
+    Blink green LED (LD2, PA5) by accessing GPIOA_ODR register
     */
-    volatile uint32_t *gpioa_odr = (volatile uint32_t *)0x40020014;
-    *gpioa_odr |= (1U << 5);
-    
-    for(;;);
+    volatile uint32_t *gpio_a_odr = (volatile uint32_t *)0x40020014;
+    for(;;) {
+        // Toggle bit 5 in the register (LED turn on)
+        *gpio_a_odr |= (1U << 5);
+        delay_ms(1000);
+        // Toggle bit 5 in the register (LED turn off)
+        *gpio_a_odr &= ~(1U << 5);
+        delay_ms(1000);
+    }
 }
