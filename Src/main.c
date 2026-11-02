@@ -34,6 +34,12 @@ int main(void)
     // Clear the desired bit field
     *gpio_a_moder &= ~(3U << shift);
     *gpio_a_moder |= (1U << shift);
+
+    /*
+    Turn on green LED (LD2, PA5) by accessing GPIOA_ODR register
+    */
+    volatile uint32_t *gpioa_odr = (volatile uint32_t *)0x40020014;
+    *gpioa_odr |= (1U << 5);
     
     for(;;);
 }
